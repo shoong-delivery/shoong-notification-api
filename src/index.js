@@ -1,16 +1,20 @@
-require('dotenv').config();
-const express = require('express');
-const { prisma } = require('../database');
+require("dotenv").config();
+const express = require("express");
+const { PrismaClient } = require("@prisma/client");
+
+const prisma = new PrismaClient();
 
 const app = express();
 app.use(express.json());
 
 // 알림 전송: POST /notify
-app.post('/notify', async (req, res) => {
+app.post("/notify", async (req, res) => {
   try {
     const { type, message, user_id, order_id } = req.body;
 
-    console.log(`[notification] type=${type} order_id=${order_id} message=${message}`);
+    console.log(
+      `[notification] type=${type} order_id=${order_id} message=${message}`,
+    );
 
     const notification = await prisma.notification.create({
       data: {
@@ -30,11 +34,11 @@ app.post('/notify', async (req, res) => {
 });
 
 // 알림 조회: GET /notify/:orderId
-app.get('/notify/:orderId', async (req, res) => {
+app.get("/notify/:orderId", async (req, res) => {
   try {
     const notifications = await prisma.notification.findMany({
       where: { order_id: Number(req.params.orderId) },
-      orderBy: { created_at: 'asc' },
+      orderBy: { created_at: "asc" },
     });
     res.json({ success: true, data: notifications });
   } catch (err) {
@@ -43,5 +47,5 @@ app.get('/notify/:orderId', async (req, res) => {
 });
 
 app.listen(process.env.PORT, () =>
-  console.log(`[notification-service] :${process.env.PORT}`)
+  console.log(`[notification-service] :${process.env.PORT}`),
 );
