@@ -7,8 +7,14 @@ const prisma = new PrismaClient();
 const app = express();
 app.use(express.json());
 
-// 알림 전송: POST /notify
-app.post("/notify", async (req, res) => {
+const cors = require("cors");
+app.use(cors());
+
+// Health Check (EKS probe용)
+app.get("/health", (req, res) => res.json({ status: "ok" }));
+
+// 알림 전송: POST /alarms
+app.post("/alarms", async (req, res) => {
   try {
     const { type, message, user_id, order_id } = req.body;
 
@@ -33,19 +39,40 @@ app.post("/notify", async (req, res) => {
   }
 });
 
-// 알림 조회: GET /notify/:orderId
-app.get("/notify/:orderId", async (req, res) => {
+// 알림 조회: GET /alarms?userName={userName}
+app.get("/alarms", async (req, res) => {
   try {
-    const notifications = await prisma.notification.findMany({
-      where: { order_id: Number(req.params.orderId) },
-      orderBy: { created_at: "asc" },
+    const { userName } = req.query;
+
+    const user = await prisma.user.findUnique({
+      where: { username: userName },
     });
-    res.json({ success: true, data: notifications });
+
+    if (!user)
+      return res.status(404).json({ success: false, error: "User not found" });
+
+    const notifications = await prisma.notification.findMany({
+      where: { user_id: user.id },
+      orderBy: { created_at: "desc" },
+    });
+
+    res.json({
+      alarms: notifications.map((n) => ({
+        id: String(n.id),
+        message: n.message,
+      })),
+    });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-app.listen(process.env.PORT, () =>
-  console.log(`[notification-service] :${process.env.PORT}`),
+const server = app.listen(process.env.PORT, () =>
+  console.log(`[notification-service] :${process.env.PORT}`)
 );
+
+process.on("SIGTERM", async () => {
+  console.log("[notification-service] SIGTERM received, shutting down...");
+  await prisma.$disconnect();
+  server.close(() => process.exit(0));
+});

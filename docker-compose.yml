@@ -1,7 +1,7 @@
 version: "3.8"
 
 services:
-  notification-service:
+  notification-api:
     build: .
     ports:
       - "3004:3004"
@@ -10,3 +10,9 @@ services:
     environment:
       PORT: 3004
       DATABASE_URL: ${DATABASE_URL}
+    networks:
+      - shoong-network
+
+networks:
+  shoong-network:
+    external: true
