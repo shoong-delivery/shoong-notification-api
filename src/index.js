@@ -10,11 +10,11 @@ app.use(express.json());
 const cors = require("cors");
 app.use(cors());
 
-// Health Check (EKS probe용)
+// Health Check
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 
-// 알림 전송: POST /alarms
-app.post("/alarms", async (req, res) => {
+// 알림 전송: POST /
+app.post("/", async (req, res) => {
   try {
     const { type, message, user_id, order_id } = req.body;
 
@@ -39,8 +39,8 @@ app.post("/alarms", async (req, res) => {
   }
 });
 
-// 알림 조회: GET /alarms?userName={userName}
-app.get("/alarms", async (req, res) => {
+// 알림 조회: GET /?userName={userName}
+app.get("/", async (req, res) => {
   try {
     const { userName } = req.query;
 
@@ -67,6 +67,7 @@ app.get("/alarms", async (req, res) => {
   }
 });
 
+
 const server = app.listen(process.env.PORT, () =>
   console.log(`[notification-service] :${process.env.PORT}`)
 );
@@ -76,3 +77,4 @@ process.on("SIGTERM", async () => {
   await prisma.$disconnect();
   server.close(() => process.exit(0));
 });
+
