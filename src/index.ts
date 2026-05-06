@@ -48,7 +48,7 @@ app.get('/', async (req: Request, res: Response) => {
     });
 
     res.json({
-      alarms: notifications.map((n) => ({
+      alarms: notifications.map((n: { id: number; message: string }) => ({
         id: String(n.id),
         message: n.message,
       })),
