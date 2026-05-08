@@ -58,8 +58,9 @@ app.get('/', async (req: Request, res: Response) => {
   }
 });
 
-const server = app.listen(process.env.PORT, () =>
-  console.log(`[notification-service] :${process.env.PORT}`)
+const PORT = process.env.PORT || 3004;
+const server = app.listen(PORT, () =>
+  console.log(`[notification-service] :${PORT}`)
 );
 
 process.on('SIGTERM', async () => {
