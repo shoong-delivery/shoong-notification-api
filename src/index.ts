@@ -12,7 +12,7 @@ app.use(cors());
 app.get('/health', (_req: Request, res: Response) => res.json({ status: 'ok' }));
 
 // 알림 전송: POST /
-app.post('/', async (req: Request, res: Response) => {
+app.post('', async (req: Request, res: Response) => {
   try {
     const { type, message, user_id, order_id } = req.body as {
       type: string;
@@ -35,7 +35,7 @@ app.post('/', async (req: Request, res: Response) => {
 });
 
 // 알림 조회: GET /?userName={userName}
-app.get('/', async (req: Request, res: Response) => {
+app.get('', async (req: Request, res: Response) => {
   try {
     const { userName } = req.query as { userName: string };
 
