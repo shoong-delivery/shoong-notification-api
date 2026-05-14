@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
+import { registry, notificationCreateTotal } from './metrics';
 
 const prisma = new PrismaClient();
 const app = express();
@@ -11,24 +12,37 @@ app.use(cors());
 // Health Check
 app.get('/health', (_req: Request, res: Response) => res.json({ status: 'ok' }));
 
+// Prometheus 스크랩 엔드포인트
+app.get('/metrics', async (_req: Request, res: Response) => {
+  try {
+    res.set('Content-Type', registry.contentType);
+    res.end(await registry.metrics());
+  } catch (err) {
+    console.error('[metrics] error -', (err as Error).message);
+    res.status(500).end();
+  }
+});
+
 // 알림 전송: POST /
 app.post('/', async (req: Request, res: Response) => {
-  try {
-    const { type, message, user_id, order_id } = req.body as {
-      type: string;
-      message: string;
-      user_id: number;
-      order_id: number;
-    };
+  const { type, message, user_id, order_id } = req.body as {
+    type: string;
+    message: string;
+    user_id: number;
+    order_id: number;
+  };
 
+  try {
     console.log(`[notification] type=${type} order_id=${order_id} message=${message}`);
 
     const notification = await prisma.notification.create({
       data: { user_id, order_id, message, type, is_read: false },
     });
 
+    notificationCreateTotal.labels(type ?? 'unknown', 'success').inc();
     res.status(201).json({ success: true, data: notification });
   } catch (err) {
+    notificationCreateTotal.labels(type ?? 'unknown', 'fail').inc();
     console.error(err);
     res.status(500).json({ success: false, error: (err as Error).message });
   }
